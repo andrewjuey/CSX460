@@ -1,12 +1,15 @@
 ---
 title: "NYCFlights: Arrival Delay Regression Model"
-author: "Andrew Ju"
-date: "10/16/2016"
+author: "Andrew Ju""
+date: "10/17/2016"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+install.packages("psych")
+library(psych)
+library(readr)
 ```
 
 # NYCFlights Model
@@ -18,6 +21,10 @@ for building a model. Describe/Explain each of the steps and show all work in co
 ## Step 1: Collect Data 
 
 ```{r "Step 1: Collect Data" }
+#write.csv(joined_data, file = "C:/Users/aju/Desktop/CSX460/03-linear-regression/HW2_joined_data.csv")
+
+joined_data <- read_csv("C:/Users/aju/Desktop/CSX460/03-linear-regression/HW2_joined_data.csv")
+head(joined_data)
 
 ```
 
@@ -29,11 +36,76 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 
 ```{r "Step 2: Explore and Prep The Data" }
 
+str(joined_data)
+sum(is.na(joined_data$arr_delay))/length(joined_data$arr_delay)
+# 02.8% NAs
+
+qplot(joined_data$arr_delay)
+
+IQR(joined_data$arr_delay, na.rm = TRUE)
+fivenum(joined_data$arr_delay, na.rm = TRUE)
+
+boxplot(joined_data$arr_delay)
+
+?cor
+is.numeric(joined_data$arr_delay)
+is.numeric(joined_data$dep_delay)
+
+cor(joined_data$arr_delay, joined_data$dep_delay, use = "complete.obs")
+cor(joined_data[c("arr_delay", "dep_delay", "distance")], use = "complete.obs")
+
+
+?apply
+#sapply(joined_data, is.numeric) %>% pairs() 
+joined_data_num <- joined_data[, sapply(joined_data, is.numeric)]
+cor(joined_data_num, use = "complete.obs")
+
+head(joined_data_num)
+
+par(mar = c(1,1,1,1))
+pairs(joined_data_num[1:10])
+?par
+# issue where just too many graphs at once? getting "Error in plot.new() : figure margins too large"
+
+pairs(joined_data[c("arr_delay", "dep_delay")])
+psych::pairs.panels(joined_data[c("arr_delay", "dep_delay", "distance")])
+pairs(joined_data)
+# performance on pairs ... seems awfully slow
+
 ```
 
 ## Step 3:  Train The Model
 
 ```{r "Step 3: Train The Model" }
+model_1 <- lm (data = joined_data, dep_delay ~ .)
+# contrasts can be applied only to factors with only 2 or more levels --> so drop single factor variables, I'm assuming
+
+check <- sapply(joined_data, function(x)is.factor(x))
+check
+# !!!!! question
+# not working ... how to check if variables are single factor variables? --> needed to export to CSV and manually check ... 
+# excluding tz.x & dst.x
+
+single_factor_vars <- names(joined_data) %in% c("tz.x", "dst.x", "year.x", "dst.y")
+joined_data_model <- joined_data[!single_factor_vars]
+
+joined_data_model[c("carrier", "origin", "dest", "type", "manufacturer", "model", "engine", "name.x", "name.y")] <- lapply(joined_data_model[c("carrier", "origin", "dest", "type", "manufacturer", "model", "engine", "name.x", "name.y")], factor)
+
+#joined_data_model[,factors] <- lapply(joined_data_model[,factors], factor)
+# ^doesn't work, bad internet advice 
+
+joined_data_model_no_na <- na.omit(joined_data_model)
+str(joined_data_model)
+
+# lm( data=joined_data_model, dep_delay ~ arr_delay + carrier + origin + dest + model + distance + precip)
+# lm does work, just needed to double check with the dist.y variable being a single factor
+
+model_2 <- lm (data = joined_data_model_no_na, dep_delay ~ .)
+summary(model_2)
+
+model_3 <- lm(data = joined_data_model, dep_delay ~ .)
+summary(model_3)
+
 
 ```
 
@@ -51,6 +123,7 @@ Evaluating performance is a crutial step, that has yet to be treated well by the
 Show some steps for improving model performance.
 
 ```{r "Step 5: Improve Performance" }
+
 
 ```
 

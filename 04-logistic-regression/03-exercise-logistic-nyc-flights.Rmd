@@ -1,12 +1,18 @@
 ---
 title: "NYCFlights: Arrival Delay Logictic Model"
-author: "[Your Name]"
-date: "[Today's Date]"
+author: "Andrew Ju"
+date: "10/25/2016""
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(psych)
+library(readr)
+library(MASS)
+
 ```
 
 
@@ -24,6 +30,19 @@ knitr::opts_chunk$set(echo = TRUE)
 **Hint:** For plotting curves see `?graphics::curve` or `?ggplot2::stat_function`
 
 ```{r "Logistic and Inverse Logistic" }
+ 
+logistic <- function(x)
+  (x/(1-x))
+
+logistic(c(-Inf,0,Inf)) %>% qplot(geom = ("density"))
+
+
+
+inverse_logistic <- function(x)
+  log(x/(1-x))
+
+inverse_logistic(c(-1,1)) %>% qplot
+
 
 ```
 
@@ -38,6 +57,13 @@ KNIT YOUR DOCUMENT AS *HTML* AND SUBMIT IT AND THE `Rmd` file.
 
 ```{r "Step 1: Collect Data" }
 
+#write.csv(joined_data, file = "C:/Users/aju/Desktop/CSX460/03-linear-regression/HW2_joined_data.csv")
+
+joined_data <- read_csv("C:/Users/Andrew Ju/CSX460 - Fall2016/03-linear-regression/HW2_joined_data.csv")
+head(joined_data)
+
+
+
 ```
 
 ## Step 2: Explore and Prep The Data
@@ -48,11 +74,54 @@ One of the things not done in the MLwR text is a pairwise comparison between the
 
 ```{r "Step 2: Explore and Prep The Data" }
 
+str(joined_data)
+sum(is.na(joined_data$arr_delay))/length(joined_data$arr_delay)
+# 02.8% NAs
+
+# SHOULD LOOK AT SKEW NEXT TIME TOO
+# not a bad idea to come up with hypotheses for strong predictors before even modeling
+qplot(joined_data$arr_delay)
+
+IQR(joined_data$arr_delay, na.rm = TRUE)
+fivenum(joined_data$arr_delay, na.rm = TRUE)
+
+boxplot(joined_data$arr_delay)
+
+?cor
+is.numeric(joined_data$arr_delay)
+is.numeric(joined_data$dep_delay)
+
+cor(joined_data$arr_delay, joined_data$dep_delay, use = "complete.obs")
+cor(joined_data[c("arr_delay", "dep_delay", "distance")], use = "complete.obs")
+
+
+?apply
+#sapply(joined_data, is.numeric) %>% pairs() 
+joined_data_num <- joined_data[, sapply(joined_data, is.numeric)]
+cor(joined_data_num, use = "complete.obs")
+
+head(joined_data_num)
+
+par(mar = c(1,1,1,1))
+pairs(joined_data_num[1:10])
+?par
+# issue where just too many graphs at once? getting "Error in plot.new() : figure margins too large"
+
+pairs(joined_data[c("arr_delay", "dep_delay")])
+psych::pairs.panels(joined_data[c("arr_delay", "dep_delay", "distance")])
+pairs(joined_data)
+# performance on pairs ... seems awfully slow
+
+
+
 ```
 
 ## Step 3:  Train The Model
 
 ```{r "Step 3: Train The Model" }
+
+log_joined_data <- joined_data_model_no_na[]
+
 
 ```
 

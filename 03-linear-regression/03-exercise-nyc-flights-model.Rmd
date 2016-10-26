@@ -12,6 +12,7 @@ install.packages("MASS")
 library(psych)
 library(readr)
 library(MASS)
+library(ggplot2)
 
 ```
 
@@ -43,6 +44,8 @@ str(joined_data)
 sum(is.na(joined_data$arr_delay))/length(joined_data$arr_delay)
 # 02.8% NAs
 
+# SHOULD LOOK AT SKEW NEXT TIME TOO
+# not a bad idea to come up with hypotheses for strong predictors before even modeling
 qplot(joined_data$arr_delay)
 
 IQR(joined_data$arr_delay, na.rm = TRUE)
@@ -82,6 +85,7 @@ pairs(joined_data)
 ```{r "Step 3: Train The Model" }
 model_1 <- lm (data = joined_data, dep_delay ~ .)
 # contrasts can be applied only to factors with only 2 or more levels --> so drop single factor variables, I'm assuming
+# EASY WAY OF DOING IT --> yx %>% sapply (. %>%  unique %>% length)
 
 check <- sapply(joined_data, function(x)is.factor(x))
 check

@@ -43,6 +43,13 @@ inverse_logistic <- function(x)
 
 inverse_logistic(c(-1,1)) %>% qplot
 
+--- 
+1 / ( 1 + exp(-x))
+
+
+x <- rnorm(100)
+sd(mean(x))
+
 
 ```
 

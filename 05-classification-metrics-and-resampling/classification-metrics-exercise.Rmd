@@ -1,8 +1,8 @@
 ---
 title: "Classification Metrics"
-author: "Christopher Brown"
-date: 
-output: html_document
+author: "Andrew Ju"
+date: "11/06/2016"
+output: pdf_document
 ---
 
 The German Credit Data (data/german_credit); 
@@ -15,6 +15,78 @@ The German Credit Data (data/german_credit);
 Show All Work! 
 
 ```{r}
+library("readr")
+library("ggplot2")
+library("dplyr")
+library("MASS")
+library("caret")
+library("gmodels")
+
+#german_credit <- read_csv("C:/Users/Andrew Ju/CSX460 - Fall2016/data/german_credit.csv")
+german_credit <- read_csv("C:/Users/aju/Desktop/CSX460/data/german_credit.csv")
+summary(german_credit)
+str(german_credit)
+# str more useful than head() 
+
+
+
+### just setting up baseline to see if later method off of just base::sample is done correctly
+?createDataPartition
+caret_data <- createDataPartition(german_credit$Creditability, p = .75, list =  FALSE)
+str(caret_data)
+typeof(caret_data)
+# --> so, the output of this first createDataPartition results in what ...? just a single vector?
+
+#caret_data2 <- createDataPartition(german_credit, p = .75, list =  FALSE)
+#doesn't work b/c needs to be off a specific variable/column, not whole table 
+
+caret_train <- german_credit[caret_data, ]
+caret_test <- german_credit[-caret_data, ]
+# and then these finals steps, you find the data partitioned via the one column/variable, but then all the other variables aren't necessarily evenly weighed
+
+
+
+### partitioning via base::sample now 
+?base::sample
+#train_data <- base::sample(german_credit, size = 750, replace = FALSE, prob = .75)
+# sample() only works from the numbers, not the actual dataframe, need nrow(), why ^ doesn't work
+
+training_rows <- sample(1:nrow(german_credit), size = 750, replace = FALSE)
+str(training_rows)
+
+train_data <- german_credit[training_rows, ]
+test_data <- german_credit[-training_rows, ]
+#test_data <- test_data[ , - "Creditability"]
+# ^ doesn't work b/c -() function only works for numeric 
+test_data_no_response <- subset(test_data, select = -Creditability)
+
+# done correctly ....? 
+
+
+
+#train_data <- tapply(1:nrow(german_credit), german_credit$Creditability ,sample, size = 750)
+#train_data
+
+#train_data_final <- unlist(train_data)
+#train_data_final
+#(train_data_final)
+
+?apply 
+
+#train2 <- sapply(german_credit[1:ncol(german_credit)], sample, size = 750)
+#str(train2)
+
+
+### training logistic regression models
+?glm
+
+german_credit_model <- glm(train_data$Creditability ~ ., family = binomial(link = "logit"), data = train_data)
+german_credit_model
+summary(german_credit_model)
+
+german_credit_model_caret <- glm(caret_train$Creditability ~ ., family = binomial(link = "logit"), data = caret_train)
+german_credit_model_caret
+summary(german_credit_model_caret)
 
 
 ```
@@ -38,6 +110,51 @@ calculate:
 * Precision
 
 ```{r, echo=FALSE}
+
+# need to take out actual classification result in test_data ...?
+
+?predict
+model_test_results <- predict(object = german_credit_model, newdata = test_data_no_response, type = "response")
+model_test_results <- round(model_test_results, digits = 0)
+model_test_results
+
+confusion_matrix <- data.frame(model_test_results, test_data$Creditability)
+confusion_matrix
+
+table(confusion_matrix$test_data.Creditability, confusion_matrix$model_test_results)
+CrossTable(confusion_matrix$test_data.Creditability, confusion_matrix$model_test_results)
+
+TN <- 30
+TP <- 158
+FN <- 25
+FP <- 37
+total_population <- 250
+
+#misclassification rate / error rate = (FP + FN)/ total population
+
+error_rate <- (FP + FN)/total_population
+error_rate
+
+Accuracy <- (TP + TN)/total_population
+Accuracy
+  
+TP_Rate  <- TP/ (TP + FN)
+#TP_Rate = Sensitivity and Recall
+TP_Rate
+
+FP_Rate <- FP/ (TN + FP)
+FP_Rate
+
+TN_Rate <-  TN / (FP + TN)
+#TN_Rate = Specificity
+TN_Rate
+
+FN_Rate <- FN / (TP + FN)
+FN_Rate
+
+Precision <- TP / (TP+FP)
+Precision
+
 
 
 ```

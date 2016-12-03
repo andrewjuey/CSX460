@@ -1,11 +1,11 @@
 ---
 title: "control-lift-stability"
-author: "Christopher Brown"
+author: "Andrew Ju"
 date: "November 30, 2016"
 output: html_document
 ---
 
-Your job is to create a model for the control lift stability of a hypotetical 
+Your job is to create a model for the control lift stability of a hypothetical 
 aircraft. 
 
 Download and the data at "~/data/control-lift.rds". Create a model for the 
@@ -15,8 +15,113 @@ beta (roll angle) for the hypothetical aircraft.
 Show all work:
 
 ```r
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("caret")
+library(caret)
+install.packages("gmodels")
+library(gmodels)
+install.packages("magrittr")
+library("magrittr")
+install.packages("psych")
+library(psych)
+install.packages("data.table")
+library(data.table)
+
+OG_data <- readRDS("/Users/andrewju/Documents/CSX460/08-time-series-analysis/control-lift/control-lift.rds") %>% setDT()
+# chris used setDT() --> function sets as data.table and just good habit b/c generally useful
+str(OG_data)
+summary(OG_data)
+
+model1 <- lm(data = OG_data, cl.stab ~ .)
+model1
+
+# CB off the bat plotted histogram of each variable, easy to do, should do
+OG_data$cl.stab %>% qplot
+
+# psych panels also useful
+OG_data %>% pairs.panels()
+OG_data[ , qplot( alpha.deg, cl.stab) + geom_smooth()]
+
+
+cor(OG_data)
+qplot(data = OG_data, cl.stab, alpha.deg) + geom_smooth()
+qplot(data = OG_data, alpha.deg, cl.stab) + geom_smooth()
+
+qplot(data = OG_data, cl.stab, beta.deg)
+
+?cor
+?qplot
+
+?createDataPartition
+caret_data <- createDataPartition(OG_data$cl.stab, p = .75, list = FALSE)
+train_data <- OG_data[caret_data, ]
+test_data <- OG_data[-caret_data, ]
+
+model2 <- lm(data = train_data, cl.stab ~ .)
+model2
+str(model2)
+
+model2_prediction <- predict(model2, data = test_data[-cl.stab, ])
+model2_prediction 
+
+confusion_matrix <- data.frame(model2_prediction, test_data$cl.stab)
+CrossTable(confusion_matrix)
+
+### ----- ^^ and above did on own ^^ ------ ###
+
+
+# readRDS() useful for saving functions instead save() etc.
+#
+
+fit <- lm( OG_data$cl.stab ~ ., OG_data)
+fit %>% summary()
+#gives R^2 and such
+
+
+# could use CARET b/c gives 1) it chooses the optimal tuning paramter for you automatically, and 2) it gives the unbiased model performance estimate while fit and lm() models just gives biased model performance estimate, and even more 3) easy ways to do bootstrap and cross-validation, etc.
+# !!! IMPORTANT REASONS TO USE CARET ABOVE ^^^
+
+
+# to make the line more flexible and to do transformations in the line, use I()
+# model1 <- fit ~ alpha + alpha^2 DOES NOT WORK
+# NEED TO DO
+# model2 <- fit ~ alpha + I(alpha^2) DOES WORK
+# could also do
+# model2 <- fit ~ alpha + I(alpha^2) * DUMMY_VARIABLE 
+# model2 <- fit ~ alpha + I(alpha^2) * DUMMY_VARIABLE + I(alpha^3)
+# can do I() with log transformations too 
+# I(log(alpha))
+# by bringing the cubed element it, makes it quadratic and fits the data a bit better possibly
+# but this all depends on the model data
+
+# to get higher order polynomial, use function --> POLY()
+form.ho <- OG_data ~ poly(alpha.deg, 9)
+fit.ho <- train(form.ho, OG_data, method = "lm")
+
+# concern over overfitting when doing this ... how to prevent?
+# could use test/train datasets but too much work
+# !!!! BELOW 
+# just use StepAIC to cycle through all of the different variables
+
+form.step <- OG_data$cl.stab ~ poly(alpha.deg, 9) + poly(beta.deg, 4)
+form.stem <- train(form.step, OG_data, method = "lm")
+?train
+form.stem %>% summary
+
+#bootstrapping & stepAIC here
+fit.step <- train (form.ho, OG_data, method = "lmStepAIC", scope = list(lower= . ~ 1, upper = . ~ .), trace = 2)
+
+
+# KEY TAKEAWAYS OF THE EXERCISE:
+# USE CARET WHENEVER
+# USE POLY(ALPHA, K)
+# AND USE STEPAIC TO RESOLVE WITH POLY()
+
 
 ```
+
+
 
 How good is your model?
 

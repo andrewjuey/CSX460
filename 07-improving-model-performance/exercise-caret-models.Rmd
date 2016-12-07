@@ -11,7 +11,11 @@ output: html_document
 Generically and regardless of model type, what are the purposes of a model
 tuning parameters?
 
+
 ```
+
+The purpose of a model's tuning parameter(s) is that it/they ensures that a model is optimized. The model tuning parameters optimize the parameters which affect the model so that the algorithm can perform at its best. One common way the model tuning parameter optimizes the model is by ensuring the model is neither overfitted nor underfitted to the data available, which in turn affects the tradeoff between variance and bias. 
+
 ```
 
 ## Caret Models
@@ -37,12 +41,97 @@ Save the caret objects with the names provided.
 
 # Your work here.
 
-fit.glm <- ..
-fit.knn <- ..
-fit.rpart <- ..
-fit.rf <- ..
+library("magrittr")
+library("ggplot2")
+library("data.table")
+library("psych")
+library("caret")
+require(caret)
+
+#data <- read.csv("/Users/andrewju/Documents/CSX460/03-linear-regression/HW2_joined_data.csv")
+data <- read.csv("C:/Users/aju/Desktop/R work/HW2_joined_data.csv") %>% setDT()
+str(data)
+summary(data)
+table(is.na(data))
+
+summary(data$arr_delay)
+data$arr_delay %>% qplot
+sum(data$arr_delay >= 15, na.rm = TRUE) / length(data$arr_delay)
+#23.2% of all flights are >= 15 minutes late
+
+
+data$late_arr <-  factor(ifelse (data$arr_delay >=15, 1, 0))
+
+table(data$late_arr)
+length(data$late_arr)
+str(data$late_arr)
+sum(is.na(data$late_arr))/sum(is.na(data$arr_delay))
+is.factor(data$late_arr)
+str(data)
+
+
+train_data <- trainControl(method = "cv", number = 10)
+grid <- expand.grid(train_data)
+?expand.grid
+# use of grid() and expand.grid() ... - syntax seems funky
+
+fit.glm <- train(late_arr ~ .
+                 ,data = na.omit(data)
+                 ,method = "glm"
+                 ,metric = "Kappa"
+                 ,trControl = train_data)
+                 #,tuneGrid = grid)
+
+# what exactly is trControl ... and doesn't it overlap with data?
+# what about tuneGrid?
+# R keeps crashing when I try to run this ... 
+
+print(fit.glm)
+??caret
+  
+
+# why doesn't this work? all the variables are factors w 2 or more levels but error
+# "contrasts can be applied only to factors with 2 or more levels"
+alt.glm <- glm(late_arr ~ . , family = binomial(link = "logit"),data = data)
+?glm
+is.factor(data$late_arr)
+
+
+
+fit.knn <- train(late_arr ~ .
+                 ,data = na.omit(data)
+                 ,method = "knn"
+                 ,metric = "Kappa"
+                 ,trControl = train_data)
+
+summary(fit.knn)
+print(fit.knn)
+
+
+fit.rpart <- train(late_arr ~ .
+                 ,data = na.omit(data)
+                 ,method = "rpart"
+                 ,metric = "Kappa"
+                 ,trControl = train_data)
+
+summary(fit.rpart)
+print(fit.rpart)
+
+
+fit.rf <- fit.rpart <- train(late_arr ~ .
+                 ,data = na.omit(data)
+                 ,method = "rf"
+                 ,metric = "Kappa"
+                 ,trControl = train_data)
+
+summary(fit.rf)
+print(fit.rf)
+
 fit.myown1 <- ..
+
 fit.myown1 <- ..
+
+
 ```
 
 Compare the  models?
@@ -51,3 +140,4 @@ Which is best?  Why?
 
 ```
 ```
+
